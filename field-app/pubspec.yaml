@@ -34,14 +34,13 @@ dependencies:
   uuid: ^4.5.1
   shared_preferences: ^2.3.3
 
-  # Voice recording
-  record: ^5.2.0
-  path_provider: ^2.1.4
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
 
 flutter:
   generate: true
