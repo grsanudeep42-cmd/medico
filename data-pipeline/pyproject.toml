@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "medico-data-pipeline"
@@ -16,9 +16,9 @@ dependencies = [
 ]
 
 [project.scripts]
-medico-load         = "data_pipeline.scripts.loader:main"
-medico-generate     = "data_pipeline.scripts.generator:main"
-medico-generate-logs = "data_pipeline.scripts.generate_logs:main"
+medico-load         = "scripts.loader:main"
+medico-generate     = "scripts.generator:main"
+medico-generate-logs = "scripts.generate_logs:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

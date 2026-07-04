@@ -13,6 +13,7 @@ import type {
   StockLevel,
   StockTransaction,
   StaffMember,
+  AiAnalyticsReport,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -73,3 +74,9 @@ export function buildWsUrl(facilityId: string): string {
     .replace(/^http/, "ws");
   return `${base}/ws/facility/${facilityId}`;
 }
+
+// ── AI Analytics ──────────────────────────────────────────────────────────────
+
+export const getAiAnalytics = (): Promise<AiAnalyticsReport> =>
+  get<AiAnalyticsReport>("/ai/analytics");
+

@@ -1,0 +1,139 @@
+{
+  "facilities": [
+    {
+      "facility_id": "FAC-0001",
+      "name": "Medico CHC 0001",
+      "facility_type": "CHC",
+      "tier": "community",
+      "capacity": 63,
+      "address": "7 Main Road, Block-2, District",
+      "lat": 18.99216,
+      "lng": 73.65773,
+      "departments": [
+        "General Medicine",
+        "Pediatrics",
+        "General Surgery",
+        "Obstetrics & Gynecology"
+      ],
+      "equipment": [
+        {
+          "name": "Basic ECG Monitor",
+          "category": "Diagnostics"
+        },
+        {
+          "name": "Ventilator",
+          "category": "Critical Care"
+        }
+      ],
+      "daily_averages": [
+        {
+          "metric_name": "outpatient_visits",
+          "avg_value": 86.0,
+          "min_value": 51.6,
+          "max_value": 129.0,
+          "source_url": "https://gov.in/stats/2024/report.pdf",
+          "recorded_at": "2024-06-15T08:00:00Z"
+        },
+        {
+          "metric_name": "bed_occupancy_rate",
+          "avg_value": 0.77,
+          "source_url": "https://gov.in/stats/2024/report.pdf",
+          "recorded_at": "2024-06-15T08:00:00Z"
+        }
+      ]
+    },
+    {
+      "facility_id": "FAC-0002",
+      "name": "Medico tertiary_referral 0002",
+      "facility_type": "tertiary_referral",
+      "tier": "apex",
+      "capacity": 154,
+      "address": "14 Main Road, Block-3, District",
+      "lat": 15.11313,
+      "lng": 74.96579,
+      "departments": [
+        "General Medicine",
+        "Pediatrics",
+        "General Surgery",
+        "Obstetrics & Gynecology",
+        "Cardiology",
+        "Neurology",
+        "Oncology"
+      ],
+      "equipment": [
+        {
+          "name": "Centrifuge",
+          "category": "Laboratory"
+        },
+        {
+          "name": "Ventilator",
+          "category": "Critical Care"
+        }
+      ],
+      "daily_averages": [
+        {
+          "metric_name": "outpatient_visits",
+          "avg_value": 359.0,
+          "min_value": 215.4,
+          "max_value": 538.5,
+          "source_url": "https://gov.in/stats/2024/report.pdf",
+          "recorded_at": "2024-06-15T08:00:00Z"
+        },
+        {
+          "metric_name": "bed_occupancy_rate",
+          "avg_value": 0.48,
+          "source_url": "https://gov.in/stats/2024/report.pdf",
+          "recorded_at": "2024-06-15T08:00:00Z"
+        }
+      ]
+    },
+    {
+      "facility_id": "FAC-0003",
+      "name": "Medico PHC 0003",
+      "facility_type": "PHC",
+      "tier": "primary",
+      "capacity": 22,
+      "address": "21 Main Road, Block-4, District",
+      "lat": 16.29242,
+      "lng": 76.7838,
+      "departments": [
+        "General Medicine",
+        "Pediatrics"
+      ],
+      "equipment": [
+        {
+          "name": "Centrifuge",
+          "category": "Laboratory"
+        },
+        {
+          "name": "Refrigerator",
+          "category": "Cold Chain"
+        },
+        {
+          "name": "Ventilator",
+          "category": "Critical Care"
+        },
+        {
+          "name": "X-Ray Machine",
+          "category": "Diagnostics"
+        }
+      ],
+      "daily_averages": [
+        {
+          "metric_name": "outpatient_visits",
+          "avg_value": 52.0,
+          "min_value": 31.2,
+          "max_value": 78.0,
+          "source_url": "https://gov.in/stats/2024/report.pdf",
+          "recorded_at": "2024-06-15T08:00:00Z"
+        },
+        {
+          "metric_name": "bed_occupancy_rate",
+          "avg_value": 0.44,
+          "source_url": "https://gov.in/stats/2024/report.pdf",
+          "recorded_at": "2024-06-15T08:00:00Z"
+        }
+      ]
+    }
+  ]
+}

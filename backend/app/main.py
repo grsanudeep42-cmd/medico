@@ -15,6 +15,7 @@ from app.routers.beds import router as beds_router
 from app.routers.attendance import attendance_router, staff_router
 from app.routers.footfall import router as footfall_router
 from app.routers.ws import router as ws_router
+from app.routers.ai import router as ai_router
 
 
 @asynccontextmanager
@@ -57,3 +58,5 @@ app.include_router(staff_router)
 app.include_router(attendance_router)
 app.include_router(footfall_router)
 app.include_router(ws_router)
+app.include_router(ai_router)
+

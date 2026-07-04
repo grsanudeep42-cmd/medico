@@ -89,3 +89,53 @@ export interface WsFrame {
   data?: Record<string, unknown>;
   receivedAt: number;    // client-assigned timestamp (Date.now())
 }
+
+// ── AI Analytics & Flagging ──────────────────────────────────────────────────
+
+export interface FlaggedFacility {
+  id: string;
+  facility_id: string;
+  name: string;
+  tier: string;
+  stockout_frequency: number;
+  bed_volatility: number;
+  doctor_attendance: number;
+  footfall_vs_median: number;
+  test_gap_percentage: number;
+  flagged: boolean;
+  flagged_reasons: string[];
+}
+
+export interface DemandForecast {
+  facility_id: string;
+  facility_name: string;
+  item_id: string;
+  item_name: string;
+  category: string;
+  quantity: number;
+  reorder_threshold: number;
+  days_remaining: number;
+  daily_rate: number;
+  status: "critical" | "warning";
+}
+
+export interface RedistributionRecommendation {
+  id: string;
+  from_facility_id: string;
+  from_facility_name: string;
+  to_facility_id: string;
+  to_facility_name: string;
+  item_id: string;
+  item_name: string;
+  recommended_quantity: number;
+  reason: string;
+}
+
+export interface AiAnalyticsReport {
+  overall_median_footfall: number;
+  facilities: FlaggedFacility[];
+  at_risk_facilities: FlaggedFacility[];
+  demand_forecasts: DemandForecast[];
+  redistribution_recommendations: RedistributionRecommendation[];
+}
+

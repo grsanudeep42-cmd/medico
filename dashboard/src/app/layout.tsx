@@ -55,6 +55,14 @@ export default function RootLayout({
                 Facilities
               </Link>
               <span className="h-4 w-px bg-slate-700" />
+              <Link
+                href="/ai-ops"
+                className="hover:text-slate-100 transition-colors flex items-center gap-1.5 font-medium text-slate-300"
+              >
+                <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 animate-pulse" />
+                AI Control Room
+              </Link>
+              <span className="h-4 w-px bg-slate-700" />
               <span className="rounded-full border border-indigo-700/50 bg-indigo-900/40 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-300">
                 Live
               </span>

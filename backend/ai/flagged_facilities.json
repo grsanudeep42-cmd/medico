@@ -1,5 +1,5 @@
 {
-  "overall_median_footfall": 50.0,
+  "overall_median_footfall": 98.5,
   "facilities": [
     {
       "facility_id": "FAC-001",
@@ -8,7 +8,7 @@
       "stockout_frequency": 50.0,
       "bed_volatility": 0.040792156108742296,
       "doctor_attendance": 90.0,
-      "footfall_vs_median": 1.0,
+      "footfall_vs_median": 0.5076142131979695,
       "test_gap_percentage": 50.0,
       "flagged": true,
       "flagged_reasons": [
@@ -23,7 +23,7 @@
       "stockout_frequency": 0.0,
       "bed_volatility": 0.34583232931581165,
       "doctor_attendance": 70.0,
-      "footfall_vs_median": 2.4,
+      "footfall_vs_median": 1.218274111675127,
       "test_gap_percentage": 0.0,
       "flagged": true,
       "flagged_reasons": [
@@ -38,11 +38,73 @@
       "stockout_frequency": 25.0,
       "bed_volatility": 0.019595917942265416,
       "doctor_attendance": 100.0,
-      "footfall_vs_median": 0.3,
+      "footfall_vs_median": 0.15228426395939088,
       "test_gap_percentage": 25.0,
       "flagged": true,
       "flagged_reasons": [
         "Stockouts (>20%)",
+        "Footfall-vs-Median (<0.50)"
+      ]
+    },
+    {
+      "facility_id": "FAC-0004",
+      "name": "Medico CHC 0004",
+      "tier": "community",
+      "stockout_frequency": 0.0,
+      "bed_volatility": 0.019595917942265416,
+      "doctor_attendance": 100.0,
+      "footfall_vs_median": 1.3401015228426396,
+      "test_gap_percentage": 0.0,
+      "flagged": false,
+      "flagged_reasons": []
+    },
+    {
+      "facility_id": "FAC-0005",
+      "name": "Medico tertiary_referral 0005",
+      "tier": "apex",
+      "stockout_frequency": 0.0,
+      "bed_volatility": 0.019595917942265416,
+      "doctor_attendance": 100.0,
+      "footfall_vs_median": 3.1065989847715736,
+      "test_gap_percentage": 0.0,
+      "flagged": false,
+      "flagged_reasons": []
+    },
+    {
+      "facility_id": "FAC-0001",
+      "name": "Medico CHC 0001",
+      "tier": "community",
+      "stockout_frequency": 0.0,
+      "bed_volatility": 0.019595917942265416,
+      "doctor_attendance": 100.0,
+      "footfall_vs_median": 0.7817258883248731,
+      "test_gap_percentage": 0.0,
+      "flagged": false,
+      "flagged_reasons": []
+    },
+    {
+      "facility_id": "FAC-0002",
+      "name": "Medico tertiary_referral 0002",
+      "tier": "apex",
+      "stockout_frequency": 0.0,
+      "bed_volatility": 0.019595917942265416,
+      "doctor_attendance": 100.0,
+      "footfall_vs_median": 3.3401015228426396,
+      "test_gap_percentage": 0.0,
+      "flagged": false,
+      "flagged_reasons": []
+    },
+    {
+      "facility_id": "FAC-0003",
+      "name": "Medico PHC 0003",
+      "tier": "primary",
+      "stockout_frequency": 0.0,
+      "bed_volatility": 0.019595917942265416,
+      "doctor_attendance": 100.0,
+      "footfall_vs_median": 0.4873096446700508,
+      "test_gap_percentage": 0.0,
+      "flagged": true,
+      "flagged_reasons": [
         "Footfall-vs-Median (<0.50)"
       ]
     }
