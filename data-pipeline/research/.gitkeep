@@ -1,0 +1,2 @@
+# Place raw facility JSON files in this directory.
+# Example filename convention: facilities_<state>_<YYYY-MM-DD>.json

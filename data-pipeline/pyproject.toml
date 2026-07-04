@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "medico-data-pipeline"
+version = "0.1.0"
+description = "ETL scripts for loading and generating medico facility data"
+requires-python = ">=3.11"
+dependencies = [
+    "sqlalchemy[asyncio]>=2.0.0",
+    "asyncpg>=0.29.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+medico-load    = "data_pipeline.scripts.loader:main"
+medico-generate = "data_pipeline.scripts.generator:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
