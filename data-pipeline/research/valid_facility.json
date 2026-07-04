@@ -1,0 +1,39 @@
+{
+  "facility_id": "TEST-FAC-100",
+  "name": "Test Primary Health Centre",
+  "facility_type": "PHC",
+  "tier": "primary",
+  "capacity": 25,
+  "address": "100 Trial Road, Testville",
+  "lat": 15.1234,
+  "lng": 76.5678,
+  "departments": [
+    "General Medicine",
+    "Pediatrics"
+  ],
+  "equipment": [
+    {
+      "name": "Basic ECG Monitor",
+      "category": "Diagnostics"
+    },
+    {
+      "name": "Refrigerator",
+      "category": "Cold Chain"
+    }
+  ],
+  "daily_averages": [
+    {
+      "metric_name": "outpatient_count",
+      "avg_value": 45.2,
+      "min_value": 30.0,
+      "max_value": 75.0,
+      "source_url": "https://gov.in/stats/2024/report.pdf",
+      "recorded_at": "2024-06-15T08:00:00Z"
+    },
+    {
+      "metric_name": "bed_occupancy_rate",
+      "avg_value": 0.65,
+      "source_url": "https://gov.in/stats/2024/report.pdf"
+    }
+  ]
+}

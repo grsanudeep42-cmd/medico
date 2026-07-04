@@ -1,0 +1,25 @@
+{
+  "facility_id": "TEST-FAC-200",
+  "name": "Invalid Test PHC",
+  "facility_type": "PHC",
+  "tier": "primary",
+  "capacity": 10,
+  "address": "200 Error Lane",
+  "lat": 15.0,
+  "lng": 76.0,
+  "departments": [
+    "General Medicine"
+  ],
+  "equipment": [],
+  "daily_averages": [
+    {
+      "metric_name": "outpatient_count",
+      "avg_value": 15.0,
+      "source_url": "https://gov.in/stats/2024/report.pdf"
+    },
+    {
+      "metric_name": "bed_occupancy_rate",
+      "avg_value": 0.20
+    }
+  ]
+}
