@@ -23,11 +23,20 @@ export default function FacilityMap({ facilities }: Props) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (mapRef.current) return; // already initialised
+
+    let isDestroyed = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let mapInstance: any = null;
 
     // Dynamic import to avoid SSR issues with Leaflet
     import("leaflet").then((L) => {
-      if (!containerRef.current) return;
+      if (isDestroyed || !containerRef.current) return;
+
+      // Check if container already has a leaflet instance
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((containerRef.current as any)._leaflet_id) {
+        return;
+      }
 
       // Fix default icon paths broken by webpack
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,15 +87,20 @@ export default function FacilityMap({ facilities }: Props) {
           .addTo(map);
       }
 
+      mapInstance = map;
       mapRef.current = map;
     });
 
     return () => {
+      isDestroyed = true;
+      // mapInstance and mapRef.current both point to the same Leaflet map —
+      // only remove once to avoid "container is being reused" errors.
       if (mapRef.current) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (mapRef.current as any).remove();
         mapRef.current = null;
       }
+      mapInstance = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
