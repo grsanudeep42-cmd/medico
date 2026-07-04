@@ -1,101 +1,109 @@
-import Image from "next/image";
+/**
+ * / — Facility list page (server component).
+ *
+ * Fetches the live facility list from the FastAPI backend.
+ * If the API is unreachable or the list is empty, shows explicit empty states.
+ * No mock data. No placeholder cards.
+ */
+import type { Metadata } from "next";
+import type { Facility } from "@/lib/types";
+import { getFacilities } from "@/lib/api";
+import FacilityCard from "@/components/FacilityCard";
+import EmptyState from "@/components/EmptyState";
+import FacilityMap from "@/components/FacilityMap";
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: "Facilities — Medico District Admin",
+  description: "Browse all healthcare facilities in the district.",
+};
+
+// Revalidate every 60 s so the list stays fresh without a full reload
+export const revalidate = 60;
+
+export default async function FacilitiesPage() {
+  let facilities: Facility[] = [];
+  let fetchError: string | null = null;
+
+  try {
+    facilities = await getFacilities();
+  } catch (err: unknown) {
+    fetchError =
+      err instanceof Error
+        ? err.message
+        : "Could not reach the Medico API. Is the backend running?";
+  }
+
+  const hasData = facilities.length > 0;
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="space-y-8">
+      {/* Page header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-100">
+          District Facilities
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Live operational overview of all facilities in the district.
+        </p>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      {/* API error banner */}
+      {fetchError && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-700/50 bg-red-900/20 px-4 py-4 text-sm text-red-300">
+          <svg
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="mt-0.5 h-5 w-5 shrink-0"
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+            <path
+              fillRule="evenodd"
+              d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
+              clipRule="evenodd"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </svg>
+          <div>
+            <p className="font-medium">Backend unreachable</p>
+            <p className="mt-0.5 text-xs text-red-400">{fetchError}</p>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      )}
+
+      {/* Map view — only rendered when there are facilities with coordinates */}
+      {hasData && (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-slate-500">
+            Map
+          </h2>
+          <FacilityMap facilities={facilities} />
+        </section>
+      )}
+
+      {/* Facility grid */}
+      <section>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
+            All Facilities
+          </h2>
+          {hasData && (
+            <span className="rounded-full bg-indigo-900/40 px-2.5 py-0.5 text-xs font-medium text-indigo-300 border border-indigo-700/40">
+              {facilities.length} facility{facilities.length !== 1 && "ies"}
+            </span>
+          )}
+        </div>
+
+        {!hasData && !fetchError ? (
+          <EmptyState
+            title="No facilities loaded yet"
+            message="Run load_facility.py with a sourced facility JSON to seed your first facility. No data will appear until real records exist in the database."
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        ) : hasData ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {facilities.map((facility) => (
+              <FacilityCard key={facility.id} facility={facility} />
+            ))}
+          </div>
+        ) : null}
+      </section>
     </div>
   );
 }
