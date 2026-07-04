@@ -21,6 +21,7 @@ import uuid
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 # ── Revision identifiers ───────────────────────────────────────────────────────
 revision: str = "0001"
@@ -75,23 +76,49 @@ def _provenance() -> list[sa.Column]:
 # ---------------------------------------------------------------------------
 
 def upgrade() -> None:
-    # ── Custom Postgres enum types ─────────────────────────────────────────────
-    facility_type_enum = sa.Enum(
+    # ── Custom Postgres enum types (idempotent via DO blocks) ─────────────────
+    # We use raw DO blocks rather than any SQLAlchemy Enum DDL so the type is
+    # created idempotently and never auto-recreated on restart.
+    op.execute(sa.text("""
+        DO $$ BEGIN
+            CREATE TYPE facility_type_enum AS ENUM ('PHC', 'CHC', 'tertiary_referral');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END $$;
+    """))
+    op.execute(sa.text("""
+        DO $$ BEGIN
+            CREATE TYPE facility_tier_enum AS ENUM ('primary', 'community', 'apex');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END $$;
+    """))
+    op.execute(sa.text("""
+        DO $$ BEGIN
+            CREATE TYPE transaction_type_enum AS ENUM
+                ('receipt', 'dispensed', 'adjustment', 'expired', 'transfer_in', 'transfer_out');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END $$;
+    """))
+
+    # postgresql.ENUM is a dialect-level type annotation with NO DDL side
+    # effects — it never calls CREATE TYPE itself.  Use it for column
+    # definitions instead of sa.Enum (which fires schema events regardless
+    # of create_type flag in some alembic versions).
+    facility_type_enum = postgresql.ENUM(
         "PHC", "CHC", "tertiary_referral",
         name="facility_type_enum",
+        create_type=False,
     )
-    facility_tier_enum = sa.Enum(
+    facility_tier_enum = postgresql.ENUM(
         "primary", "community", "apex",
         name="facility_tier_enum",
+        create_type=False,
     )
-    transaction_type_enum = sa.Enum(
+    transaction_type_enum = postgresql.ENUM(
         "receipt", "dispensed", "adjustment",
         "expired", "transfer_in", "transfer_out",
         name="transaction_type_enum",
+        create_type=False,
     )
-    facility_type_enum.create(op.get_bind(), checkfirst=True)
-    facility_tier_enum.create(op.get_bind(), checkfirst=True)
-    transaction_type_enum.create(op.get_bind(), checkfirst=True)
 
     # ── facilities ─────────────────────────────────────────────────────────────
     op.create_table(

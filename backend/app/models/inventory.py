@@ -84,7 +84,7 @@ class StockTransaction(UUIDPrimaryKey, Base):
     # Positive = stock in, negative = stock out
     delta: Mapped[float] = mapped_column(Numeric(precision=12, scale=3), nullable=False)
     transaction_type: Mapped[TransactionType] = mapped_column(
-        SAEnum(TransactionType, name="transaction_type_enum", create_type=True), nullable=False
+        SAEnum(TransactionType, name="transaction_type_enum", create_type=False), nullable=False
     )
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, index=True

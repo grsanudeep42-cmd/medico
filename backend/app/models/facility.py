@@ -32,10 +32,10 @@ class Facility(UUIDPrimaryKey, TimestampMixin, Base):
     facility_id: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     facility_type: Mapped[FacilityType] = mapped_column(
-        SAEnum(FacilityType, name="facility_type_enum", create_type=True), nullable=False
+        SAEnum(FacilityType, name="facility_type_enum", create_type=False), nullable=False
     )
     tier: Mapped[FacilityTier] = mapped_column(
-        SAEnum(FacilityTier, name="facility_tier_enum", create_type=True), nullable=False
+        SAEnum(FacilityTier, name="facility_tier_enum", create_type=False), nullable=False
     )
 
     # Self-referential FK — NULL for apex facilities
