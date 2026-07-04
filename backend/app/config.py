@@ -18,6 +18,29 @@ class Settings(BaseSettings):
     secret_key: str
     backend_cors_origins: list[str] = ["http://localhost:3000"]
 
+    # ── Required Diagnostic Tests by Facility Tier (IPHS-based) ───────────────
+    required_tests_by_tier: dict[str, list[str]] = {
+        "primary": ["Hb", "urine routine", "blood sugar", "malaria smear"],
+        "community": [
+            "Hb",
+            "urine routine",
+            "blood sugar",
+            "malaria smear",
+            "X-ray",
+            "ECG",
+            "wider pathology panel",
+        ],
+        "apex": [
+            "Hb",
+            "urine routine",
+            "blood sugar",
+            "malaria smear",
+            "X-ray",
+            "ECG",
+            "wider pathology panel",
+        ],
+    }
+
     @field_validator("backend_cors_origins", mode="before")
     @classmethod
     def _parse_cors(cls, v: object) -> list[str]:

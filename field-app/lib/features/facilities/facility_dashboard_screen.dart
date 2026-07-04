@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/models/facility.dart';
 import '../../core/services/facility_sync_service.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/theme.dart';
 import '../../shared/widgets/sync_status_chip.dart';
 import '../stock/stock_count_screen.dart';
@@ -10,7 +11,6 @@ import '../beds/bed_status_screen.dart';
 import '../attendance/attendance_screen.dart';
 import '../footfall/footfall_screen.dart';
 
-/// Dashboard for a single facility showing 4 data-entry action cards.
 class FacilityDashboardScreen extends StatefulWidget {
   const FacilityDashboardScreen({super.key, required this.facility});
 
@@ -24,7 +24,6 @@ class _FacilityDashboardScreenState extends State<FacilityDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // Kick off per-facility sync (staff, departments, stock levels)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<FacilitySyncService>().syncFacility(widget.facility.id);
     });
@@ -53,16 +52,15 @@ class _FacilityDashboardScreenState extends State<FacilityDashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Facility info banner
             _InfoBanner(facility: f),
             const SizedBox(height: 24),
             const Text(
-              'Data Entry',
+              'DATA ENTRY',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: kColorTextMuted,
-                letterSpacing: 1,
+                letterSpacing: 1.2,
               ),
             ),
             const SizedBox(height: 12),
@@ -74,8 +72,6 @@ class _FacilityDashboardScreenState extends State<FacilityDashboardScreen> {
     );
   }
 }
-
-// ── Info banner ──────────────────────────────────────────────────────────────
 
 class _InfoBanner extends StatelessWidget {
   const _InfoBanner({required this.facility});
@@ -144,19 +140,18 @@ class _Stat extends StatelessWidget {
   }
 }
 
-// ── Action grid ──────────────────────────────────────────────────────────────
-
 class _ActionGrid extends StatelessWidget {
   const _ActionGrid({required this.facility});
   final Facility facility;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final items = [
       _ActionItem(
         icon: Icons.inventory_2_rounded,
-        label: 'Stock Count',
-        subtitle: 'Update inventory levels',
+        label: l10n.stockCount,
+        subtitle: l10n.updateInventoryLevels,
         color: kColorAccent,
         onTap: () => Navigator.push(
           context,
@@ -165,8 +160,8 @@ class _ActionGrid extends StatelessWidget {
       ),
       _ActionItem(
         icon: Icons.bed_rounded,
-        label: 'Bed Status',
-        subtitle: 'Log occupancy snapshot',
+        label: l10n.bedStatus,
+        subtitle: l10n.logOccupancy,
         color: const Color(0xFF6C63FF),
         onTap: () => Navigator.push(
           context,
@@ -175,8 +170,8 @@ class _ActionGrid extends StatelessWidget {
       ),
       _ActionItem(
         icon: Icons.badge_rounded,
-        label: 'Attendance',
-        subtitle: 'Staff check-in',
+        label: l10n.attendance,
+        subtitle: l10n.staffCheckin,
         color: kColorWarning,
         onTap: () => Navigator.push(
           context,
@@ -185,8 +180,8 @@ class _ActionGrid extends StatelessWidget {
       ),
       _ActionItem(
         icon: Icons.people_alt_rounded,
-        label: 'Footfall',
-        subtitle: 'Patient count log',
+        label: l10n.footfall,
+        subtitle: l10n.patientCountLog,
         color: kColorDanger,
         onTap: () => Navigator.push(
           context,

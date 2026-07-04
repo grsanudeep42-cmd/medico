@@ -1,0 +1,228 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Medico Field",
+  "@appTitle": { "description": "Application title" },
+
+  "settings": "Settings",
+  "@settings": { "description": "Settings nav label" },
+
+  "synced": "Synced",
+  "@synced": { "description": "Sync chip: all data uploaded" },
+
+  "offline": "Offline",
+  "@offline": { "description": "Sync chip: no network" },
+
+  "syncing": "Syncing…",
+  "@syncing": { "description": "Sync chip: upload in progress" },
+
+  "pendingCount": "{n} pending",
+  "@pendingCount": {
+    "description": "Sync chip: n writes awaiting upload",
+    "placeholders": { "n": { "type": "int" } }
+  },
+
+  "syncNow": "Sync Now",
+  "@syncNow": { "description": "Pull-to-refresh button label" },
+
+  "noFacilitiesTitle": "No Facilities Loaded",
+  "@noFacilitiesTitle": { "description": "Empty state heading on home screen" },
+
+  "noFacilitiesMessage": "Pull down to sync from the server, or connect to a network.\nNo sample data is shown until real facilities are loaded.",
+  "@noFacilitiesMessage": { "description": "Empty state body on home screen" },
+
+  "stockCount": "Stock Count",
+  "@stockCount": { "description": "Dashboard card label" },
+
+  "updateInventoryLevels": "Update inventory levels",
+  "@updateInventoryLevels": { "description": "Dashboard card subtitle" },
+
+  "bedStatus": "Bed Status",
+  "@bedStatus": { "description": "Dashboard card label" },
+
+  "logOccupancy": "Log occupancy snapshot",
+  "@logOccupancy": { "description": "Dashboard card subtitle" },
+
+  "attendance": "Attendance",
+  "@attendance": { "description": "Dashboard card label" },
+
+  "staffCheckin": "Staff check-in",
+  "@staffCheckin": { "description": "Dashboard card subtitle" },
+
+  "footfall": "Footfall",
+  "@footfall": { "description": "Dashboard card label" },
+
+  "patientCountLog": "Patient count log",
+  "@patientCountLog": { "description": "Dashboard card subtitle" },
+
+  "noInventoryTitle": "No Inventory Items",
+  "@noInventoryTitle": { "description": "Empty state title on stock screen" },
+
+  "noInventoryMessage": "Sync the facility first to load inventory items from the server.",
+  "@noInventoryMessage": { "description": "Empty state body on stock screen" },
+
+  "saveStockCount": "Save Stock Count",
+  "@saveStockCount": { "description": "Stock screen save button" },
+
+  "saving": "Saving…",
+  "@saving": { "description": "Button loading state" },
+
+  "belowReorder": "⚠ Below reorder threshold",
+  "@belowReorder": { "description": "Low stock warning label" },
+
+  "itemsSaved": "{n} items saved. Will sync when online.",
+  "@itemsSaved": {
+    "description": "Snackbar after saving stock",
+    "placeholders": { "n": { "type": "int" } }
+  },
+
+  "totalBeds": "Total Beds",
+  "@totalBeds": { "description": "Bed status stepper label" },
+
+  "occupiedBeds": "Occupied Beds",
+  "@occupiedBeds": { "description": "Bed status stepper label" },
+
+  "saveSnapshot": "Save Snapshot",
+  "@saveSnapshot": { "description": "Bed status save button" },
+
+  "occupiedExceedsTotal": "Occupied beds cannot exceed total beds",
+  "@occupiedExceedsTotal": { "description": "Validation error for bed status" },
+
+  "lastRecorded": "Last recorded: {ts} UTC",
+  "@lastRecorded": {
+    "description": "Bed status last-recorded label",
+    "placeholders": { "ts": { "type": "String" } }
+  },
+
+  "occupancy": "Occupancy",
+  "@occupancy": { "description": "Occupancy ring label" },
+
+  "bedSnapshotSaved": "Bed snapshot saved. Will sync when online.",
+  "@bedSnapshotSaved": { "description": "Snackbar after saving bed snapshot" },
+
+  "noStaffTitle": "No Staff Loaded",
+  "@noStaffTitle": { "description": "Empty state title on attendance screen" },
+
+  "noStaffMessage": "Sync the facility first to load staff members from the server.",
+  "@noStaffMessage": { "description": "Empty state body on attendance screen" },
+
+  "submitAttendance": "Submit Attendance",
+  "@submitAttendance": { "description": "Attendance submit button" },
+
+  "attendanceSaved": "Attendance for {n} staff saved. Will sync when online.",
+  "@attendanceSaved": {
+    "description": "Snackbar after attendance submit",
+    "placeholders": { "n": { "type": "int" } }
+  },
+
+  "alreadySubmitted": "Already submitted",
+  "@alreadySubmitted": { "description": "Staff tile subtitle when attendance already logged" },
+
+  "presentSlashTotal": "{present} / {total} Present",
+  "@presentSlashTotal": {
+    "description": "Attendance date bar summary",
+    "placeholders": {
+      "present": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "newEntry": "New Entry",
+  "@newEntry": { "description": "Footfall card heading" },
+
+  "patientCountLabel": "Patient Count",
+  "@patientCountLabel": { "description": "Footfall count field label" },
+
+  "departmentOptional": "Department (optional)",
+  "@departmentOptional": { "description": "Footfall department dropdown label" },
+
+  "allDepartments": "All departments",
+  "@allDepartments": { "description": "Footfall dropdown 'no department' option" },
+
+  "logFootfall": "Log Footfall",
+  "@logFootfall": { "description": "Footfall submit button" },
+
+  "footfallSaved": "Footfall logged. Will sync when online.",
+  "@footfallSaved": { "description": "Snackbar after logging footfall" },
+
+  "recentEntries": "RECENT ENTRIES",
+  "@recentEntries": { "description": "Footfall recent entries section header" },
+
+  "patients": "{n} patients",
+  "@patients": {
+    "description": "Footfall log patient count",
+    "placeholders": { "n": { "type": "int" } }
+  },
+
+  "patientsMustBePositive": "Patient count must be ≥ 0",
+  "@patientsMustBePositive": { "description": "Footfall validation error" },
+
+  "backendConnection": "BACKEND CONNECTION",
+  "@backendConnection": { "description": "Settings section header" },
+
+  "apiBaseUrl": "API Base URL",
+  "@apiBaseUrl": { "description": "Settings URL field label" },
+
+  "apiUrlHint": "http://10.0.2.2:8000",
+  "@apiUrlHint": { "description": "Settings URL field hint" },
+
+  "apiUrlHelp": "For Android emulator use http://10.0.2.2:8000.\nFor a real device use the server's LAN IP.",
+  "@apiUrlHelp": { "description": "Settings URL helper text" },
+
+  "saveUrl": "Save URL",
+  "@saveUrl": { "description": "Settings save URL button" },
+
+  "apiUrlUpdated": "API URL updated. Changes take effect immediately.",
+  "@apiUrlUpdated": { "description": "Snackbar after saving URL" },
+
+  "languageLabel": "LANGUAGE",
+  "@languageLabel": { "description": "Settings language section header" },
+
+  "selectLanguage": "Select Language",
+  "@selectLanguage": { "description": "Settings language dropdown label" },
+
+  "aiKeysLabel": "AI / VOICE KEYS",
+  "@aiKeysLabel": { "description": "Settings AI keys section header" },
+
+  "whisperKeyLabel": "Whisper API Key",
+  "@whisperKeyLabel": { "description": "Settings Whisper key field label" },
+
+  "llmKeyLabel": "LLM API Key (gpt-4o-mini)",
+  "@llmKeyLabel": { "description": "Settings LLM key field label" },
+
+  "saveKeys": "Save Keys",
+  "@saveKeys": { "description": "Settings save AI keys button" },
+
+  "keysSaved": "API keys saved.",
+  "@keysSaved": { "description": "Snackbar after saving keys" },
+
+  "voiceInput": "Voice Input",
+  "@voiceInput": { "description": "Voice button tooltip" },
+
+  "recording": "Recording…",
+  "@recording": { "description": "Voice button recording state" },
+
+  "processing": "Processing…",
+  "@processing": { "description": "Voice button processing state" },
+
+  "reviewExtraction": "Review Voice Input",
+  "@reviewExtraction": { "description": "Bottom sheet title" },
+
+  "confirmAndFill": "Confirm & Fill",
+  "@confirmAndFill": { "description": "Voice review confirm button" },
+
+  "retryRecording": "Retry",
+  "@retryRecording": { "description": "Voice review retry button" },
+
+  "extractionFailed": "Could not understand the recording. Please try again.",
+  "@extractionFailed": { "description": "Voice extraction error message" },
+
+  "voiceRequiresNetwork": "Voice input requires a network connection.",
+  "@voiceRequiresNetwork": { "description": "Toast when offline and mic tapped" },
+
+  "voiceKeysMissing": "Set Whisper and LLM keys in Settings first.",
+  "@voiceKeysMissing": { "description": "Toast when keys not configured" },
+
+  "saved": "saved",
+  "@saved": { "description": "Badge on footfall recent log entry" }
+}

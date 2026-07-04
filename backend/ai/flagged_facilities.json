@@ -1,0 +1,50 @@
+{
+  "overall_median_footfall": 50.0,
+  "facilities": [
+    {
+      "facility_id": "FAC-001",
+      "name": "General Hospital PHC",
+      "tier": "primary",
+      "stockout_frequency": 50.0,
+      "bed_volatility": 0.040792156108742296,
+      "doctor_attendance": 90.0,
+      "footfall_vs_median": 1.0,
+      "test_gap_percentage": 50.0,
+      "flagged": true,
+      "flagged_reasons": [
+        "Stockouts (>20%)",
+        "Diagnostic Gap (>30%)"
+      ]
+    },
+    {
+      "facility_id": "FAC-d6347b6c",
+      "name": "Cardiology Facility",
+      "tier": "community",
+      "stockout_frequency": 0.0,
+      "bed_volatility": 0.34583232931581165,
+      "doctor_attendance": 70.0,
+      "footfall_vs_median": 2.4,
+      "test_gap_percentage": 0.0,
+      "flagged": true,
+      "flagged_reasons": [
+        "Bed Volatility (>0.30)",
+        "Doctor Attendance (<80%)"
+      ]
+    },
+    {
+      "facility_id": "TEST-FAC-100",
+      "name": "Test Primary Health Centre",
+      "tier": "primary",
+      "stockout_frequency": 25.0,
+      "bed_volatility": 0.019595917942265416,
+      "doctor_attendance": 100.0,
+      "footfall_vs_median": 0.3,
+      "test_gap_percentage": 25.0,
+      "flagged": true,
+      "flagged_reasons": [
+        "Stockouts (>20%)",
+        "Footfall-vs-Median (<0.50)"
+      ]
+    }
+  ]
+}

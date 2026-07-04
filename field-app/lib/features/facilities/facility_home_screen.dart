@@ -4,16 +4,14 @@ import 'package:provider/provider.dart';
 import '../../core/db/database_service.dart';
 import '../../core/models/facility.dart';
 import '../../core/services/facility_sync_service.dart';
+import '../../core/services/locale_service.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/theme.dart';
 import '../../shared/widgets/empty_state_widget.dart';
 import '../../shared/widgets/sync_status_chip.dart';
 import '../settings/settings_screen.dart';
 import 'facility_dashboard_screen.dart';
 
-/// Entry screen: shows all locally-known facilities.
-///
-/// On first launch with no synced data this screen shows a clear empty state —
-/// no placeholder or sample records are ever inserted.
 class FacilityHomeScreen extends StatefulWidget {
   const FacilityHomeScreen({super.key});
 
@@ -49,8 +47,46 @@ class _FacilityHomeScreenState extends State<FacilityHomeScreen> {
     await _loadFacilities();
   }
 
+  void _showLanguagePicker() {
+    final localeService = context.read<LocaleService>();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: kColorCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppLocalizations.of(context).selectLanguage,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: kColorTextPrimary),
+              ),
+              const SizedBox(height: 12),
+              ...localeService.options.map((o) => ListTile(
+                    leading: const Icon(Icons.language_rounded, color: kColorAccent),
+                    title: Text(o.nativeLabel),
+                    trailing: localeService.locale.languageCode == o.locale.languageCode
+                        ? const Icon(Icons.check_rounded, color: kColorAccent)
+                        : null,
+                    onTap: () {
+                      localeService.setLocale(o.locale);
+                      Navigator.pop(context);
+                    },
+                  )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -65,12 +101,16 @@ class _FacilityHomeScreenState extends State<FacilityHomeScreen> {
               child: const Icon(Icons.local_hospital_rounded, size: 16, color: kColorBackground),
             ),
             const SizedBox(width: 10),
-            const Text('Medico Field'),
+            Text(l10n.appTitle),
           ],
         ),
         actions: [
           const SyncStatusChip(),
-          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.language_rounded),
+            tooltip: l10n.selectLanguage,
+            onPressed: _showLanguagePicker,
+          ),
           Consumer<FacilitySyncService>(
             builder: (context2, svc, child2) => svc.isLoading
                 ? const Padding(
@@ -83,17 +123,17 @@ class _FacilityHomeScreenState extends State<FacilityHomeScreen> {
                   )
                 : IconButton(
                     icon: const Icon(Icons.refresh_rounded),
-                    tooltip: 'Sync from server',
+                    tooltip: l10n.syncNow,
                     onPressed: _onRefresh,
                   ),
           ),
           IconButton(
             icon: const Icon(Icons.settings_rounded),
-            tooltip: 'Settings',
+            tooltip: l10n.settings,
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
+            ).then((_) => _loadFacilities()),
           ),
         ],
       ),
@@ -110,11 +150,9 @@ class _FacilityHomeScreenState extends State<FacilityHomeScreen> {
                       SizedBox(height: MediaQuery.of(context).size.height * 0.2),
                       EmptyStateWidget(
                         icon: Icons.location_city_rounded,
-                        title: 'No Facilities Loaded',
-                        message:
-                            'Pull down to sync from the server, or connect to a network.\n'
-                            'No sample data is shown until real facilities are loaded.',
-                        actionLabel: 'Sync Now',
+                        title: l10n.noFacilitiesTitle,
+                        message: l10n.noFacilitiesMessage,
+                        actionLabel: l10n.syncNow,
                         onAction: _onRefresh,
                       ),
                     ],

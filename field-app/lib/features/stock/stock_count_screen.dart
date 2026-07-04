@@ -3,14 +3,19 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/db/database_service.dart';
+import '../../core/models/extraction_result.dart';
 import '../../core/models/facility.dart';
 import '../../core/models/inventory_item.dart';
 import '../../core/models/outbox_item.dart';
 import '../../core/models/stock_level.dart';
 import '../../core/services/sync_service.dart';
+import '../../core/services/voice_service.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/theme.dart';
 import '../../shared/widgets/empty_state_widget.dart';
 import '../../shared/widgets/sync_status_chip.dart';
+import '../../shared/widgets/voice_input_button.dart';
+import '../../shared/widgets/voice_review_sheet.dart';
 
 const _uuid = Uuid();
 
@@ -29,18 +34,14 @@ class _StockCountScreenState extends State<StockCountScreen> {
   Map<String, TextEditingController> _ctrls = {};
   bool _loading = true;
   bool _saving = false;
+  bool _voiceProcessing = false;
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  void initState() { super.initState(); _load(); }
 
   @override
   void dispose() {
-    for (final c in _ctrls.values) {
-      c.dispose();
-    }
+    for (final c in _ctrls.values) { c.dispose(); }
     super.dispose();
   }
 
@@ -58,6 +59,7 @@ class _StockCountScreenState extends State<StockCountScreen> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _saving = true);
     final sync = context.read<SyncService>();
     int saved = 0;
@@ -66,98 +68,95 @@ class _StockCountScreenState extends State<StockCountScreen> {
       final now = DateTime.now().toUtc().toIso8601String();
       final existing = _levels[item.id];
       final levelId = existing?.id ?? _uuid.v4();
-      await _db.upsertStockLevel(StockLevel(
-        id: levelId, facilityId: widget.facility.id, itemId: item.id,
-        quantity: qty, reorderThreshold: existing?.reorderThreshold ?? 0, lastUpdated: now,
-      ));
-      await _db.enqueue(OutboxItem(
-        id: _uuid.v4(), entityType: 'stock_level', entityId: levelId,
-        operation: existing == null ? 'create' : 'upsert',
-        payload: {'item_id': item.id, 'quantity': qty, 'reorder_threshold': existing?.reorderThreshold ?? 0, 'last_updated': now},
-        facilityId: widget.facility.id, createdAt: now,
-      ));
+      await _db.upsertStockLevel(StockLevel(id: levelId, facilityId: widget.facility.id, itemId: item.id, quantity: qty, reorderThreshold: existing?.reorderThreshold ?? 0, lastUpdated: now));
+      await _db.enqueue(OutboxItem(id: _uuid.v4(), entityType: 'stock_level', entityId: levelId, operation: existing == null ? 'create' : 'upsert', payload: {'item_id': item.id, 'quantity': qty, 'reorder_threshold': existing?.reorderThreshold ?? 0, 'last_updated': now}, facilityId: widget.facility.id, createdAt: now));
       saved++;
     }
     await sync.refreshPendingCount();
     sync.drain();
     if (mounted) {
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('$saved items saved. Will sync when online.'),
-        backgroundColor: kColorSuccess.withAlpha(200),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.itemsSaved(saved)), backgroundColor: kColorSuccess.withAlpha(200)));
       _load();
+    }
+  }
+
+  Future<void> _onVoiceStart() async {
+    final voice = context.read<VoiceService>();
+    if (!await voice.keysConfigured()) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).voiceKeysMissing), backgroundColor: kColorDanger));
+      return;
+    }
+    await voice.startRecording();
+  }
+
+  Future<void> _onVoiceStop() async {
+    setState(() => _voiceProcessing = true);
+    final voice = context.read<VoiceService>();
+    final locale = Localizations.localeOf(context).languageCode;
+    final result = await voice.stopAndProcess(screen: VoiceScreen.stock, languageCode: locale);
+    setState(() => _voiceProcessing = false);
+    if (!mounted) return;
+    await VoiceReviewSheet.show(context: context, result: result, onConfirm: _applyExtraction, onRetry: () => _onVoiceStart().then((_) => null));
+  }
+
+  void _applyExtraction(ExtractionResult r) {
+    if (r is! StockExtraction) return;
+    final q = r.itemName.toLowerCase();
+    final matched = _items.cast<InventoryItem?>().firstWhere(
+      (i) => i!.name.toLowerCase().contains(q) || q.contains(i.name.toLowerCase()),
+      orElse: () => null,
+    );
+    if (matched != null && _ctrls.containsKey(matched.id)) {
+      setState(() => _ctrls[matched.id]!.text = r.quantity.toString());
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No item matched "${r.itemName}"'), backgroundColor: kColorWarning));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Stock Count', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-        actions: const [SyncStatusChip(), SizedBox(width: 12)],
-      ),
+      appBar: AppBar(title: Text(l10n.stockCount, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)), actions: const [SyncStatusChip(), SizedBox(width: 12)]),
+      floatingActionButton: VoiceInputButton(tooltip: l10n.voiceInput, isProcessing: _voiceProcessing, onStart: _onVoiceStart, onStop: _onVoiceStop),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: kColorAccent))
           : _items.isEmpty
-              ? const EmptyStateWidget(
-                  icon: Icons.inventory_2_rounded,
-                  title: 'No Inventory Items',
-                  message: 'Sync the facility first to load inventory items from the server.',
-                )
+              ? EmptyStateWidget(icon: Icons.inventory_2_rounded, title: l10n.noInventoryTitle, message: l10n.noInventoryMessage)
               : Column(children: [
-                  Expanded(
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                      separatorBuilder: (ctx2, idx2) => const SizedBox(height: 10),
-                      itemCount: _items.length,
-                      itemBuilder: (_, i) {
-                        final item = _items[i];
-                        final sl = _levels[item.id];
-                        final isLow = sl != null && sl.quantity <= sl.reorderThreshold;
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: kColorCard, borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: isLow ? kColorDanger.withAlpha(100) : kColorBorder),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          child: Row(children: [
-                            Container(
-                              width: 36, height: 36,
-                              decoration: BoxDecoration(color: kColorAccent.withAlpha(20), borderRadius: BorderRadius.circular(10)),
-                              child: const Icon(Icons.medication_rounded, color: kColorAccent, size: 18),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(item.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kColorTextPrimary)),
-                              Text('${item.category} · ${item.unit}', style: const TextStyle(fontSize: 11, color: kColorTextMuted)),
-                              if (isLow) const Text('⚠ Below reorder threshold', style: TextStyle(fontSize: 11, color: kColorDanger)),
-                            ])),
-                            const SizedBox(width: 12),
-                            SizedBox(
-                              width: 90,
-                              child: TextField(
-                                controller: _ctrls[item.id],
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kColorTextPrimary),
-                                decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10)),
-                              ),
-                            ),
-                          ]),
-                        );
-                      },
-                    ),
-                  ),
+                  Expanded(child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                    separatorBuilder: (c, i) => const SizedBox(height: 10),
+                    itemCount: _items.length,
+                    itemBuilder: (_, i) {
+                      final item = _items[i];
+                      final sl = _levels[item.id];
+                      final isLow = sl != null && sl.quantity <= sl.reorderThreshold;
+                      return Container(
+                        decoration: BoxDecoration(color: kColorCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: isLow ? kColorDanger.withAlpha(100) : kColorBorder)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        child: Row(children: [
+                          Container(width: 36, height: 36, decoration: BoxDecoration(color: kColorAccent.withAlpha(20), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.medication_rounded, color: kColorAccent, size: 18)),
+                          const SizedBox(width: 12),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(item.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kColorTextPrimary)),
+                            Text('${item.category} · ${item.unit}', style: const TextStyle(fontSize: 11, color: kColorTextMuted)),
+                            if (isLow) Text(l10n.belowReorder, style: const TextStyle(fontSize: 11, color: kColorDanger)),
+                          ])),
+                          const SizedBox(width: 12),
+                          SizedBox(width: 90, child: TextField(controller: _ctrls[item.id], keyboardType: const TextInputType.numberWithOptions(decimal: true), textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kColorTextPrimary), decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10)))),
+                        ]),
+                      );
+                    },
+                  )),
                   Container(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     decoration: const BoxDecoration(color: kColorSurface, border: Border(top: BorderSide(color: kColorBorder))),
                     child: ElevatedButton.icon(
                       onPressed: _saving ? null : _save,
-                      icon: _saving
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: kColorBackground))
-                          : const Icon(Icons.save_rounded),
-                      label: Text(_saving ? 'Saving…' : 'Save Stock Count'),
+                      icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: kColorBackground)) : const Icon(Icons.save_rounded),
+                      label: Text(_saving ? l10n.saving : l10n.saveStockCount),
                     ),
                   ),
                 ]),

@@ -4,11 +4,16 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/db/database_service.dart';
 import '../../core/models/bed_snapshot.dart';
+import '../../core/models/extraction_result.dart';
 import '../../core/models/facility.dart';
 import '../../core/models/outbox_item.dart';
 import '../../core/services/sync_service.dart';
+import '../../core/services/voice_service.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/theme.dart';
 import '../../shared/widgets/sync_status_chip.dart';
+import '../../shared/widgets/voice_input_button.dart';
+import '../../shared/widgets/voice_review_sheet.dart';
 
 const _uuid = Uuid();
 
@@ -26,12 +31,10 @@ class _BedStatusScreenState extends State<BedStatusScreen> {
   int _total = 0;
   int _occupied = 0;
   bool _saving = false;
+  bool _voiceProcessing = false;
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
     final snap = await _db.getLatestBedSnapshot(widget.facility.id);
@@ -45,11 +48,9 @@ class _BedStatusScreenState extends State<BedStatusScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
     if (_occupied > _total) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Occupied beds cannot exceed total beds'),
-        backgroundColor: kColorDanger,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.occupiedExceedsTotal), backgroundColor: kColorDanger));
       return;
     }
     setState(() => _saving = true);
@@ -58,84 +59,81 @@ class _BedStatusScreenState extends State<BedStatusScreen> {
     final id = _uuid.v4();
     final snap = BedSnapshot(id: id, facilityId: widget.facility.id, totalBeds: _total, occupiedBeds: _occupied, updatedAt: now);
     await _db.insertBedSnapshot(snap);
-    await _db.enqueue(OutboxItem(
-      id: _uuid.v4(), entityType: 'bed_snapshot', entityId: id, operation: 'create',
-      payload: {'total_beds': _total, 'occupied_beds': _occupied, 'updated_at': now},
-      facilityId: widget.facility.id, createdAt: now,
-    ));
+    await _db.enqueue(OutboxItem(id: _uuid.v4(), entityType: 'bed_snapshot', entityId: id, operation: 'create', payload: {'total_beds': _total, 'occupied_beds': _occupied, 'updated_at': now}, facilityId: widget.facility.id, createdAt: now));
     await sync.refreshPendingCount();
     sync.drain();
     if (mounted) {
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Bed snapshot saved. Will sync when online.'),
-        backgroundColor: kColorSuccess.withAlpha(200),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.bedSnapshotSaved), backgroundColor: kColorSuccess.withAlpha(200)));
       _load();
     }
   }
 
+  Future<void> _onVoiceStart() async {
+    final voice = context.read<VoiceService>();
+    if (!await voice.keysConfigured()) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).voiceKeysMissing), backgroundColor: kColorDanger));
+      return;
+    }
+    await voice.startRecording();
+  }
+
+  Future<void> _onVoiceStop() async {
+    setState(() => _voiceProcessing = true);
+    final voice = context.read<VoiceService>();
+    final locale = Localizations.localeOf(context).languageCode;
+    final result = await voice.stopAndProcess(screen: VoiceScreen.beds, languageCode: locale);
+    setState(() => _voiceProcessing = false);
+    if (!mounted) return;
+    await VoiceReviewSheet.show(context: context, result: result, onConfirm: _applyExtraction, onRetry: () => _onVoiceStart().then((_) => null));
+  }
+
+  void _applyExtraction(ExtractionResult r) {
+    if (r is! BedExtraction) return;
+    setState(() {
+      if (r.totalBeds != null) _total = r.totalBeds!;
+      if (r.occupiedBeds != null) _occupied = r.occupiedBeds!.clamp(0, _total);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final occupancy = _total > 0 ? _occupied / _total : 0.0;
     final occupancyColor = occupancy > 0.9 ? kColorDanger : occupancy > 0.7 ? kColorWarning : kColorSuccess;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bed Status', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-        actions: const [SyncStatusChip(), SizedBox(width: 12)],
-      ),
+      appBar: AppBar(title: Text(l10n.bedStatus, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)), actions: const [SyncStatusChip(), SizedBox(width: 12)]),
+      floatingActionButton: VoiceInputButton(tooltip: l10n.voiceInput, isProcessing: _voiceProcessing, onStart: _onVoiceStart, onStop: _onVoiceStop),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
-          // Occupancy ring
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(color: kColorCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: kColorBorder)),
             child: Column(children: [
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                SizedBox(width: 120, height: 120, child: Stack(alignment: Alignment.center, children: [
-                  CircularProgressIndicator(
-                    value: occupancy, strokeWidth: 10,
-                    backgroundColor: kColorBorder,
-                    color: occupancyColor,
-                  ),
-                  Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text('${(occupancy * 100).toStringAsFixed(0)}%',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: occupancyColor)),
-                    const Text('Occupancy', style: TextStyle(fontSize: 10, color: kColorTextMuted)),
-                  ]),
-                ])),
-              ]),
+              SizedBox(width: 120, height: 120, child: Stack(alignment: Alignment.center, children: [
+                CircularProgressIndicator(value: occupancy, strokeWidth: 10, backgroundColor: kColorBorder, color: occupancyColor),
+                Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text('${(occupancy * 100).toStringAsFixed(0)}%', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: occupancyColor)),
+                  Text(l10n.occupancy, style: const TextStyle(fontSize: 10, color: kColorTextMuted)),
+                ]),
+              ])),
               const SizedBox(height: 16),
-              if (_latest != null) Text(
-                'Last recorded: ${_latest!.updatedAt.substring(0, 16).replaceAll('T', ' ')} UTC',
-                style: const TextStyle(fontSize: 12, color: kColorTextMuted),
-              ),
+              if (_latest != null) Text(l10n.lastRecorded(_latest!.updatedAt.substring(0, 16).replaceAll('T', ' ')), style: const TextStyle(fontSize: 12, color: kColorTextMuted)),
             ]),
           ),
           const SizedBox(height: 20),
-          _StepperCard(
-            label: 'Total Beds',
-            value: _total,
-            onDecrement: _total > 0 ? () => setState(() => _total--) : null,
-            onIncrement: () => setState(() => _total++),
-          ),
+          _StepperCard(label: l10n.totalBeds, value: _total, onDecrement: _total > 0 ? () => setState(() => _total--) : null, onIncrement: () => setState(() => _total++)),
           const SizedBox(height: 12),
-          _StepperCard(
-            label: 'Occupied Beds',
-            value: _occupied,
-            onDecrement: _occupied > 0 ? () => setState(() => _occupied--) : null,
-            onIncrement: _occupied < _total ? () => setState(() => _occupied++) : null,
-          ),
+          _StepperCard(label: l10n.occupiedBeds, value: _occupied, onDecrement: _occupied > 0 ? () => setState(() => _occupied--) : null, onIncrement: _occupied < _total ? () => setState(() => _occupied++) : null),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: _saving ? null : _submit,
-            icon: _saving
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: kColorBackground))
-                : const Icon(Icons.save_rounded),
-            label: Text(_saving ? 'Saving…' : 'Save Snapshot'),
+            icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: kColorBackground)) : const Icon(Icons.save_rounded),
+            label: Text(_saving ? l10n.saving : l10n.saveSnapshot),
           ),
+          const SizedBox(height: 100),
         ]),
       ),
     );
@@ -158,8 +156,7 @@ class _StepperCard extends StatelessWidget {
         Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: kColorTextPrimary)),
         Row(children: [
           _CircleBtn(icon: Icons.remove, onPressed: onDecrement),
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text('$value', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: kColorTextPrimary))),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Text('$value', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: kColorTextPrimary))),
           _CircleBtn(icon: Icons.add, onPressed: onIncrement),
         ]),
       ]),

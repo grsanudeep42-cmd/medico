@@ -2,13 +2,16 @@ name: field_app
 description: "Medico field-app — offline-first data entry for facility staff."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.11.3
 
+
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
@@ -31,10 +34,15 @@ dependencies:
   uuid: ^4.5.1
   shared_preferences: ^2.3.3
 
+  # Voice recording
+  record: ^5.2.0
+  path_provider: ^2.1.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
 flutter:
+  generate: true
   uses-material-design: true

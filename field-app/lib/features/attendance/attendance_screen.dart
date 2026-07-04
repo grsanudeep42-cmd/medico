@@ -5,13 +5,18 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/db/database_service.dart';
 import '../../core/models/attendance_log.dart';
+import '../../core/models/extraction_result.dart';
 import '../../core/models/facility.dart';
 import '../../core/models/outbox_item.dart';
 import '../../core/models/staff.dart';
 import '../../core/services/sync_service.dart';
+import '../../core/services/voice_service.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/theme.dart';
 import '../../shared/widgets/empty_state_widget.dart';
 import '../../shared/widgets/sync_status_chip.dart';
+import '../../shared/widgets/voice_input_button.dart';
+import '../../shared/widgets/voice_review_sheet.dart';
 
 const _uuid = Uuid();
 
@@ -31,6 +36,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _loading = true;
   bool _saving = false;
+  bool _voiceProcessing = false;
 
   @override
   void initState() {
@@ -48,7 +54,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       setState(() {
         _staff = staffList;
         _alreadySubmitted = existing;
-        // Pre-fill toggles from already-submitted, default unsubmitted to true (present)
         _attendance = {for (final s in staffList) s.id: existing[s.id] ?? true};
         _loading = false;
       });
@@ -56,6 +61,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _saving = true);
     final sync = context.read<SyncService>();
     final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
@@ -77,7 +83,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     if (mounted) {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Attendance for ${logs.length} staff saved. Will sync when online.'),
+        content: Text(l10n.attendanceSaved(logs.length)),
         backgroundColor: kColorSuccess.withAlpha(200),
       ));
       _load();
@@ -100,38 +106,98 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
+  Future<void> _onVoiceStart() async {
+    final voice = context.read<VoiceService>();
+    if (!await voice.keysConfigured()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppLocalizations.of(context).voiceKeysMissing),
+          backgroundColor: kColorDanger,
+        ));
+      }
+      return;
+    }
+    await voice.startRecording();
+  }
+
+  Future<void> _onVoiceStop() async {
+    setState(() => _voiceProcessing = true);
+    final voice = context.read<VoiceService>();
+    final locale = Localizations.localeOf(context).languageCode;
+    final result = await voice.stopAndProcess(screen: VoiceScreen.attendance, languageCode: locale);
+    setState(() => _voiceProcessing = false);
+    if (!mounted) return;
+    await VoiceReviewSheet.show(
+      context: context,
+      result: result,
+      onConfirm: _applyExtraction,
+      onRetry: () => _onVoiceStart().then((_) => null),
+    );
+  }
+
+  void _applyExtraction(ExtractionResult r) {
+    if (r is! AttendanceExtraction) return;
+    final status = r.status.toLowerCase() == 'present';
+    setState(() {
+      for (final name in r.names) {
+        final query = name.toLowerCase();
+        // Fuzzy match: find the staff member whose name contains the spoken name query
+        final matched = _staff.cast<Staff?>().firstWhere(
+          (s) => s!.name.toLowerCase().contains(query) || query.contains(s.name.toLowerCase()),
+          orElse: () => null,
+        );
+        if (matched != null) {
+          _attendance[matched.id] = status;
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final presentCount = _attendance.values.where((v) => v).length;
     final dateStr = DateFormat('EEE, d MMM yyyy').format(_selectedDate);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Attendance', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        title: Text(l10n.attendance, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         actions: const [SyncStatusChip(), SizedBox(width: 12)],
+      ),
+      floatingActionButton: VoiceInputButton(
+        tooltip: l10n.voiceInput,
+        isProcessing: _voiceProcessing,
+        onStart: _onVoiceStart,
+        onStop: _onVoiceStop,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: kColorAccent))
           : _staff.isEmpty
-              ? const EmptyStateWidget(
-                  icon: Icons.badge_rounded, title: 'No Staff Loaded',
-                  message: 'Sync the facility first to load staff members from the server.',
+              ? EmptyStateWidget(
+                  icon: Icons.badge_rounded,
+                  title: l10n.noStaffTitle,
+                  message: l10n.noStaffMessage,
                 )
               : Column(children: [
-                  // Date picker bar
                   GestureDetector(
                     onTap: _pickDate,
                     child: Container(
                       margin: const EdgeInsets.all(16),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(color: kColorCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: kColorAccent.withAlpha(100))),
+                      decoration: BoxDecoration(
+                        color: kColorCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: kColorAccent.withAlpha(100)),
+                      ),
                       child: Row(children: [
                         const Icon(Icons.calendar_today_rounded, size: 18, color: kColorAccent),
                         const SizedBox(width: 10),
                         Text(dateStr, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: kColorTextPrimary)),
                         const Spacer(),
-                        Text('$presentCount / ${_staff.length} Present',
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kColorAccent)),
+                        Text(
+                          l10n.presentSlashTotal(presentCount, _staff.length),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kColorAccent),
+                        ),
                         const SizedBox(width: 8),
                         const Icon(Icons.edit_calendar_rounded, size: 16, color: kColorTextMuted),
                       ]),
@@ -139,7 +205,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                   Expanded(
                     child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                       separatorBuilder: (context2, index2) => const SizedBox(height: 8),
                       itemCount: _staff.length,
                       itemBuilder: (_, i) {
@@ -148,19 +214,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         final wasSubmitted = _alreadySubmitted.containsKey(s.id);
                         return Container(
                           decoration: BoxDecoration(
-                            color: kColorCard, borderRadius: BorderRadius.circular(12),
+                            color: kColorCard,
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: isPresent ? kColorAccent.withAlpha(60) : kColorDanger.withAlpha(60)),
                           ),
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                             leading: CircleAvatar(
                               backgroundColor: isPresent ? kColorAccent.withAlpha(30) : kColorDanger.withAlpha(30),
-                              child: Text(s.name.isNotEmpty ? s.name[0].toUpperCase() : '?',
-                                  style: TextStyle(fontWeight: FontWeight.w700, color: isPresent ? kColorAccent : kColorDanger)),
+                              child: Text(
+                                s.name.isNotEmpty ? s.name[0].toUpperCase() : '?',
+                                style: TextStyle(fontWeight: FontWeight.w700, color: isPresent ? kColorAccent : kColorDanger),
+                              ),
                             ),
                             title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600, color: kColorTextPrimary)),
                             subtitle: Text(
-                              '${s.role}${wasSubmitted ? ' · Already submitted' : ''}',
+                              '${s.role}${wasSubmitted ? ' · ${l10n.alreadySubmitted}' : ''}',
                               style: TextStyle(color: wasSubmitted ? kColorAccent : kColorTextMuted, fontSize: 12),
                             ),
                             trailing: Switch(
@@ -180,7 +249,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       icon: _saving
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: kColorBackground))
                           : const Icon(Icons.check_circle_rounded),
-                      label: Text(_saving ? 'Saving…' : 'Submit Attendance'),
+                      label: Text(_saving ? l10n.saving : l10n.submitAttendance),
                     ),
                   ),
                 ]),
