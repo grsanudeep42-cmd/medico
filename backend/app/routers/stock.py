@@ -31,6 +31,7 @@ from app.schemas.stock import (
     StockTransactionRead,
 )
 from app.services.publisher import publish
+from app.services.ai_scheduler import check_facility_stockouts
 
 router = APIRouter(prefix="/facilities/{facility_id}", tags=["stock"])
 
@@ -111,6 +112,8 @@ async def create_stock_level(
     await db.refresh(level)
     payload = StockLevelRead.model_validate(level).model_dump()
     await publish(redis, str(facility_id), "stock_level.created", payload)
+    # Trigger immediate stock-out check for this facility
+    await check_facility_stockouts(facility_id)
     return level
 
 
@@ -147,6 +150,8 @@ async def update_stock_level(
     await db.refresh(level)
     payload = StockLevelRead.model_validate(level).model_dump()
     await publish(redis, str(facility_id), "stock_level.updated", payload)
+    # Trigger immediate stock-out check (catches drops below threshold in real-time)
+    await check_facility_stockouts(facility_id)
     return level
 
 

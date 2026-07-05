@@ -1,12 +1,22 @@
 """Application settings loaded from environment variables."""
 from __future__ import annotations
 
+from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _find_env_file() -> str:
+    """Locate .env: check backend/ dir, then walk up to project root."""
+    here = Path(__file__).resolve().parent.parent  # backend/
+    for candidate in [here / ".env", here.parent / ".env"]:
+        if candidate.exists():
+            return str(candidate)
+    return ".env"  # fallback — let pydantic-settings handle the miss
+
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_find_env_file(), extra="ignore")
 
     # ── Database ──────────────────────────────────────────────────────────────
     database_url: str

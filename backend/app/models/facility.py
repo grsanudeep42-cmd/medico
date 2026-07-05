@@ -91,3 +91,6 @@ class Facility(UUIDPrimaryKey, TimestampMixin, Base):
     test_availabilities: Mapped[list["TestAvailability"]] = relationship(  # noqa: F821
         "TestAvailability", back_populates="facility", cascade="all, delete-orphan"
     )
+    alerts: Mapped[list["FacilityAlert"]] = relationship(  # noqa: F821
+        "FacilityAlert", back_populates="facility", cascade="all, delete-orphan"
+    )

@@ -139,3 +139,45 @@ export interface AiAnalyticsReport {
   redistribution_recommendations: RedistributionRecommendation[];
 }
 
+// ── Alerts ────────────────────────────────────────────────────────────────────
+
+export type AlertSeverity = "info" | "warning" | "critical";
+export type AlertCategory =
+  | "stockout"
+  | "bed_volatility"
+  | "doctor_attendance"
+  | "footfall"
+  | "diagnostic_gap"
+  | "resource_redistribution";
+
+export interface FacilityAlert {
+  id: string;
+  facility_id: string;
+  facility_name: string;
+  severity: AlertSeverity;
+  category: AlertCategory;
+  message: string;
+  detail: string | null;
+  acknowledged_at: string | null;
+  acknowledged_by: string | null;
+  created_at: string | null;
+}
+
+export interface TransferApproveBody {
+  from_facility_id: string;
+  to_facility_id: string;
+  item_id: string;
+  quantity: number;
+  recommendation_reason?: string;
+}
+
+export interface TransferResult {
+  success: boolean;
+  from_facility_name: string;
+  to_facility_name: string;
+  item_name: string;
+  quantity_transferred: number;
+  from_new_quantity: number;
+  to_new_quantity: number;
+  message: string;
+}

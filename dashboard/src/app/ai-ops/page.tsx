@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getAiAnalytics } from "@/lib/api";
-import type { AiAnalyticsReport } from "@/lib/types";
+import { getAiAnalytics, approveTransfer } from "@/lib/api";
+import type { AiAnalyticsReport, TransferResult } from "@/lib/types";
 import EmptyState from "@/components/EmptyState";
 
 export default function AiOpsPage() {
@@ -10,7 +10,8 @@ export default function AiOpsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "flagged" | "forecast" | "redistribute">("all");
-  const [approvedTransfers, setApprovedTransfers] = useState<Record<string, { loading: boolean; done: boolean }>>({});
+  const [transferStates, setTransferStates] = useState<Record<string, { loading: boolean; done: boolean; result?: TransferResult; error?: string }>>({});
+
 
   useEffect(() => {
     fetchReport();
@@ -29,19 +30,40 @@ export default function AiOpsPage() {
     }
   };
 
-  const handleApproveTransfer = (recId: string) => {
-    setApprovedTransfers(prev => ({
+  const handleApproveTransfer = async (
+    recId: string,
+    fromFacilityId: string,
+    toFacilityId: string,
+    itemId: string,
+    quantity: number,
+    reason: string
+  ) => {
+    setTransferStates(prev => ({
       ...prev,
       [recId]: { loading: true, done: false }
     }));
-
-    // Simulate transfer API call
-    setTimeout(() => {
-      setApprovedTransfers(prev => ({
+    try {
+      const result = await approveTransfer({
+        from_facility_id: fromFacilityId,
+        to_facility_id: toFacilityId,
+        item_id: itemId,
+        quantity,
+        recommendation_reason: reason,
+      });
+      setTransferStates(prev => ({
         ...prev,
-        [recId]: { loading: false, done: true }
+        [recId]: { loading: false, done: true, result }
       }));
-    }, 1500);
+    } catch (err: unknown) {
+      setTransferStates(prev => ({
+        ...prev,
+        [recId]: {
+          loading: false,
+          done: false,
+          error: err instanceof Error ? err.message : "Transfer failed"
+        }
+      }));
+    }
   };
 
   if (loading) {
@@ -327,7 +349,7 @@ export default function AiOpsPage() {
               </div>
             ) : (
               redistribution_recommendations.map(rec => {
-                const status = approvedTransfers[rec.id];
+                const state = transferStates[rec.id];
                 return (
                   <div key={rec.id} className="group overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between transition-all hover:border-indigo-500/40">
                     <div className="space-y-1.5 flex-1">
@@ -347,10 +369,17 @@ export default function AiOpsPage() {
                         <span>➔</span>
                         <span className="text-slate-300 font-semibold">{rec.to_facility_name}</span>
                       </div>
+                      {/* Show success or error messages inline */}
+                      {state?.result && (
+                        <p className="text-xs text-emerald-400 mt-1">{state.result.message}</p>
+                      )}
+                      {state?.error && (
+                        <p className="text-xs text-red-400 mt-1">Error: {state.error}</p>
+                      )}
                     </div>
 
                     <div className="self-end md:self-center shrink-0">
-                      {status?.done ? (
+                      {state?.done ? (
                         <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-sm bg-emerald-950/30 border border-emerald-500/20 px-4 py-2 rounded-xl">
                           <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                             <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
@@ -359,19 +388,24 @@ export default function AiOpsPage() {
                         </div>
                       ) : (
                         <button
-                          onClick={() => handleApproveTransfer(rec.id)}
-                          disabled={status?.loading}
+                          onClick={() => handleApproveTransfer(
+                            rec.id,
+                            rec.from_facility_id,
+                            rec.to_facility_id,
+                            rec.item_id,
+                            rec.recommended_quantity,
+                            rec.reason
+                          )}
+                          disabled={state?.loading}
                           className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20 active:scale-95 disabled:opacity-50"
                         >
-                          {status?.loading ? (
+                          {state?.loading ? (
                             <>
                               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                               Processing...
                             </>
                           ) : (
-                            <>
-                              Approve Transfer
-                            </>
+                            <>Approve Transfer</>
                           )}
                         </button>
                       )}

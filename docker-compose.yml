@@ -26,7 +26,9 @@ services:
     command: redis-server --save 60 1 --loglevel warning
     volumes:
       - redis_data:/data
-    # No host-port binding — avoids conflict with host redis on :6379.
+    ports:
+      - "6380:6379"
+    # Port 6380 on host → 6379 in container (avoids conflict with host redis)
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s

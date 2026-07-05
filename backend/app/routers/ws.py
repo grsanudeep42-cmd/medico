@@ -1,9 +1,11 @@
-"""WebSocket endpoint for live dashboard pushes via Redis pub/sub.
+"""WebSocket endpoints for live dashboard pushes via Redis pub/sub.
 
-Endpoint:  GET /ws/facility/{facility_id}
+Endpoints:
+  GET /ws/facility/{facility_id}  — per-facility event stream
+  GET /ws/district                — district-wide event stream (alerts from all facilities)
 
 The client connects and receives a stream of JSON text frames, one per
-Redis publish event on channel  ``medico:facility:{facility_id}``.
+Redis publish event on the subscribed channel.
 
 Design decisions:
 - A *dedicated* pubsub connection is created per WebSocket connection so
@@ -33,15 +35,11 @@ router = APIRouter(tags=["websocket"])
 _POLL_TIMEOUT: float = 5.0
 
 
-@router.websocket("/ws/facility/{facility_id}")
-async def facility_ws(websocket: WebSocket, facility_id: str) -> None:
-    """Stream live events for a facility to a connected dashboard client."""
+async def _stream_channel(websocket: WebSocket, channel: str, label: str) -> None:
+    """Shared WebSocket streaming loop for any Redis channel."""
     await websocket.accept()
-    channel = _channel(facility_id)
-    log.info("WebSocket opened for facility %s (channel: %s)", facility_id, channel)
+    log.info("WebSocket opened for %s (channel: %s)", label, channel)
 
-    # Create a *separate* Redis connection for pubsub — never share with the
-    # main client because subscribe() puts the connection into a blocking mode.
     pubsub_redis = Redis.from_url(settings.redis_url, decode_responses=True)
     pubsub = pubsub_redis.pubsub()
 
@@ -55,8 +53,6 @@ async def facility_ws(websocket: WebSocket, facility_id: str) -> None:
                     timeout=_POLL_TIMEOUT,
                 )
             except asyncio.TimeoutError:
-                # No message within the poll window — send a keep-alive ping
-                # and check whether the client is still connected.
                 try:
                     await websocket.send_text('{"event":"ping"}')
                 except WebSocketDisconnect:
@@ -64,7 +60,6 @@ async def facility_ws(websocket: WebSocket, facility_id: str) -> None:
                 continue
 
             if message is None:
-                # No new message yet; give the event-loop a breath.
                 await asyncio.sleep(0)
                 continue
 
@@ -75,13 +70,26 @@ async def facility_ws(websocket: WebSocket, facility_id: str) -> None:
                     break
 
     except WebSocketDisconnect:
-        log.info("WebSocket client disconnected for facility %s", facility_id)
+        log.info("WebSocket client disconnected for %s", label)
     except Exception as exc:  # noqa: BLE001
-        log.warning("WebSocket error for facility %s: %s", facility_id, exc)
+        log.warning("WebSocket error for %s: %s", label, exc)
     finally:
         try:
             await pubsub.unsubscribe(channel)
         except Exception:  # noqa: BLE001
             pass
         await pubsub_redis.aclose()
-        log.info("WebSocket cleaned up for facility %s", facility_id)
+        log.info("WebSocket cleaned up for %s", label)
+
+
+@router.websocket("/ws/facility/{facility_id}")
+async def facility_ws(websocket: WebSocket, facility_id: str) -> None:
+    """Stream live events for a single facility to a connected dashboard client."""
+    await _stream_channel(websocket, _channel(facility_id), f"facility:{facility_id}")
+
+
+@router.websocket("/ws/district")
+async def district_ws(websocket: WebSocket) -> None:
+    """Stream district-wide events (all alerts, transfers) to the notification bell."""
+    await _stream_channel(websocket, _channel("district"), "district")
+

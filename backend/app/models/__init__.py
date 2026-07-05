@@ -15,6 +15,7 @@ from app.models.inventory import InventoryItem, StockLevel, StockTransaction, Tr
 from app.models.bed import Bed  # noqa: F401
 from app.models.footfall import FootfallLog  # noqa: F401
 from app.models.test_availability import TestAvailability  # noqa: F401
+from app.models.alert import FacilityAlert, AlertSeverity, AlertCategory  # noqa: F401
 
 __all__ = [
     "Facility",
@@ -32,4 +33,7 @@ __all__ = [
     "Bed",
     "FootfallLog",
     "TestAvailability",
+    "FacilityAlert",
+    "AlertSeverity",
+    "AlertCategory",
 ]

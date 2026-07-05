@@ -7,9 +7,16 @@ CREATE TYPE inside transactions.
 import os
 import re
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
+
+# Load .env BEFORE importing app modules so pydantic-settings gets all required vars
+_root = Path(__file__).resolve().parent.parent
+load_dotenv(_root / ".env", override=False)
+load_dotenv(_root.parent / ".env", override=False)
 
 # Import all models so autogenerate can detect schema changes
 from app.database import Base  # noqa: F401
